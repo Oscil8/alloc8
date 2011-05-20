@@ -1,5 +1,6 @@
 Simple distributed resource allocation using Redis.
 
+<pre>
 require 'alloc8'
 
 HOST = "my-redis"
@@ -14,3 +15,4 @@ PORT = 6379 # default Redis port
 Alloc8::Tor.with_resource("worker", HOST, PORT) do |worker|
   # something
 end
+</pre>
