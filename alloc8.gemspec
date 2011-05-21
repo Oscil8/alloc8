@@ -6,11 +6,12 @@ Gem::Specification.new do |s|
   s.name        = "alloc8"
   s.version     = Alloc8::VERSION
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["TODO: Write your name"]
-  s.email       = ["TODO: Write your email address"]
+  s.authors     = ["Ariel Salomon"]
+  s.email       = ["ariel@oscillatory.org"]
   s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.summary     = %q{Simple distributed resource allocator based on Redis}
+  s.description = %q{Simple distributed resource allocation using Redis.
+    Alloc8::Tor.with_resource do ...}
 
   s.rubyforge_project = "alloc8"
 
