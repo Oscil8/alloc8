@@ -35,11 +35,17 @@ describe Alloc8 do
 
     it "can purge resource class" do
       @allocator.purge(KIND).should == true
+      @allocator.list(KIND).should eq([])
+      @allocator.available(KIND).should eq([])
     end
 
     it "can acquire and return a resource" do
       @allocator.acquire(KIND).should == "a"
+      @allocator.available(KIND).should eq([])
+
       @allocator.return(KIND, "a").should == 1
+      @allocator.list(KIND).should eq(["a"])
+      @allocator.available(KIND).should eq(["a"])
     end
 
     it "can't return an invalid resource" do
@@ -63,7 +69,9 @@ describe Alloc8 do
 
     it "can return a list of resources, available resources" do
       @allocator.list(KIND).should include("a", "b", "c")
+      @allocator.list(KIND).should have(3).items
       @allocator.available(KIND).should include("a", "b", "c")
+      @allocator.available(KIND).should have(3).items
     end
 
     it "can purge resource class" do
