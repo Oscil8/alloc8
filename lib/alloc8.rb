@@ -53,7 +53,7 @@ module Alloc8
 
     # return resource
     def return(klass, resource)
-      raise Exception if !@redis.sismember key(klass), resource.to_s
+      raise Exception.new("Invalid resource #{resource} for class #{klass}") if !@redis.sismember key(klass), resource.to_s
       @redis.lpush key(klass, :avail), resource.to_s
     end
 
