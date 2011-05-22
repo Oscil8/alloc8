@@ -1,0 +1,46 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'thor'
+require 'alloc8'
+
+class Alloc8Cmd < Thor
+
+  class_option :host, :aliases => "-h", :type => :string, :default => (ENV["ALLOC8_HOST"] || "localhost"),
+    :desc => "Redis store hostname"
+  class_option :port, :aliases => "-p", :type => :numeric, :default => 6379, :desc => "Redis store port"
+  class_option :db, :type => :numeric, :desc => "Redis store database number"
+
+  desc "list CLASS [-A]", "List all instances (or just available) of a resource class"
+  method_option :available, :aliases => "-A", :type => :boolean, :desc => "List only the available (non-acquired) instances"
+  def list(klass)
+    allocator = Alloc8::Tor.new options[:host], options[:port], options[:db]
+    verb = options[:available] ? :available : :list
+    puts "#{verb.to_s.capitalize} entries for #{klass}:"
+    allocator.send(verb, klass).each do |res|
+      puts "  #{res}"
+    end
+  end
+
+  desc "create CLASS RESOURCE", "Create a resource of a specific class"
+  def create(klass, resource)
+    allocator = Alloc8::Tor.new options[:host], options[:port], options[:db]
+    allocator.create(klass, resource)
+    puts "Added #{resource} to #{klass}."
+  end
+
+  desc "purge CLASS", "Delete all resources from a class"
+  def purge(klass)
+    allocator = Alloc8::Tor.new options[:host], options[:port], options[:db]
+    allocator.purge(klass)
+    puts "Purged all entries for #{klass}."
+  end
+
+  desc "reset CLASS", "Release acquired resources for a class"
+  def reset(klass)
+    allocator = Alloc8::Tor.new options[:host], options[:port], options[:db]
+    allocator.reset(klass)
+    puts "Reset all acquired entries for #{klass}."
+  end
+end
+
+Alloc8Cmd.start
