@@ -19,6 +19,11 @@ describe Alloc8 do
   context "having a single resource" do
     before { @allocator.create KIND, "a" }
 
+    it "can return a list of resources, available resources" do
+      @allocator.list(KIND).should eq(["a"])
+      @allocator.available(KIND).should eq(["a"])
+    end
+
     it "can't allocate it again" do
       @allocator.create(KIND, "a").should == nil
     end
@@ -37,6 +42,10 @@ describe Alloc8 do
       @allocator.return(KIND, "a").should == 1
     end
 
+    it "can't return an invalid resource" do
+      lambda { @allocator.return(KIND, "foo") }.should raise_error
+    end
+
     it "can acquire with a block" do
       Alloc8::Tor.with_resource(KIND, HOST, PORT) do |res|
         res.should == "a"
@@ -51,6 +60,11 @@ describe Alloc8 do
 
   context "having multiple resources" do
     before { ["a", "b", "c"].each {|r| @allocator.create KIND, r} }
+
+    it "can return a list of resources, available resources" do
+      @allocator.list(KIND).should include("a", "b", "c")
+      @allocator.available(KIND).should include("a", "b", "c")
+    end
 
     it "can purge resource class" do
       @allocator.purge(KIND).should == true

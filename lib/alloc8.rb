@@ -2,51 +2,72 @@ require 'redis'
 
 module Alloc8
   class Tor
-    # initialize connection to a redis
+    # initialize connection to redis
     def initialize(host, port, db=nil)
       @redis = Redis.new(:host => host, :port => port)
       @redis.select(db) if db
     end
 
     # create a resource in a class
-    def create(resource_class, resource)
-      if @redis.sadd("resource:#{resource_class}", resource.to_s)
-        @redis.lpush "resource:#{resource_class}:avail", resource.to_s
+    def create(klass, resource)
+      if @redis.sadd(key(klass), resource.to_s)
+        @redis.lpush key(klass, :avail), resource.to_s
       end
     end
 
-    # delete a resource
-    def purge(resource_class)
-      nkeys = @redis.del "resource:#{resource_class}:avail", "resource:#{resource_class}"
+    # list all resources in class
+    def list(klass)
+      @redis.smembers(key(klass))
+    end
+
+    # delete a resource class
+    def purge(klass)
+      nkeys = @redis.del key(klass, :avail), key(klass)
       nkeys == 2 # true if purged all
     end
 
     # reset available items in resource class
-    def reset(resource_class)
-      @redis.del "resource:#{resource_class}:avail"
-      @redis.smembers("resource:#{resource_class}").each do |resource|
-        @redis.lpush "resource:#{resource_class}:avail", resource.to_s
+    def reset(klass)
+      akey = key(klass, :avail)
+      @redis.del akey
+      @redis.smembers(key(klass)).each do |resource|
+        @redis.lpush akey, resource.to_s
       end
     end
 
+    # list all available items in resource class
+    def available(klass)
+      akey = key(klass, :avail)
+      avail = []
+      @redis.llen(akey).times do |i|
+        avail << @redis.lindex(akey, i)
+      end
+      avail
+    end
+
     # acquire next available resource
-    def acquire(resource_class, timeout = 0)
-      key, res = @redis.brpop "resource:#{resource_class}:avail", timeout
+    def acquire(klass, timeout = 0)
+      akey, res = @redis.brpop key(klass, :avail), timeout
       res
     end
 
     # return resource
-    def return(resource_class, resource)
-      raise Exception if !@redis.sismember "resource:#{resource_class}", resource.to_s
-      @redis.lpush "resource:#{resource_class}:avail", resource.to_s
+    def return(klass, resource)
+      raise Exception if !@redis.sismember key(klass), resource.to_s
+      @redis.lpush key(klass, :avail), resource.to_s
     end
 
     # block to allocate a resource
-    def self.with_resource(resource_class, host, port, db=nil)
-       a = Alloc8::Tor.new host, port, db
-       res = a.acquire(resource_class)
-       yield res
-       a.return(resource_class, res)
+    def self.with_resource(klass, host, port, db=nil)
+      a = Alloc8::Tor.new host, port, db
+      res = a.acquire(klass)
+      yield res
+      a.return(klass, res)
+    end
+
+    private
+    def key(klass, suffix = nil)
+      "resource:#{klass}" << (suffix ? suffix.to_s : "")
     end
   end
 end
