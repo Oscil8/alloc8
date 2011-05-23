@@ -52,10 +52,19 @@ describe Alloc8 do
       lambda { @allocator.return(KIND, "foo") }.should raise_error
     end
 
-    it "can acquire with a block" do
+    it "can acquire with a block, and returns correctly" do
       Alloc8::Tor.with_resource(KIND, HOST, PORT) do |res|
         res.should == "a"
+        @allocator.available(KIND).should eq([])
       end
+      @allocator.list(KIND).should eq(["a"])
+      @allocator.available(KIND).should eq(["a"])
+    end
+
+    it "can acquire with a block, and handle an exception" do
+      lambda { Alloc8::Tor.with_resource(KIND, HOST, PORT) { raise Exception.new("test") } }.should raise_error
+      @allocator.list(KIND).should eq(["a"])
+      @allocator.available(KIND).should eq(["a"])
     end
 
     it "can't acquire a second resource" do

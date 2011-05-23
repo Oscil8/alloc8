@@ -60,9 +60,12 @@ module Alloc8
     # block to allocate a resource
     def self.with_resource(klass, host, port, db=nil)
       a = Alloc8::Tor.new host, port, db
-      res = a.acquire(klass)
-      yield res
-      a.return(klass, res)
+      begin
+        res = a.acquire(klass)
+        yield res
+      ensure
+        a.return(klass, res)
+      end
     end
 
     private
